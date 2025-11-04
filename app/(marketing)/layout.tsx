@@ -1,9 +1,13 @@
 // src/app/layout.tsx
 import "../globals.css";
+import type { Metadata } from "next";
 
-export const metadata = {
-  title: "Log Z Quiz",
+export const metadata: Metadata = {
+  title: "Diagnóstico Log Z",
   description: "Obtenha um diagnóstico completo sobre sua operação",
+  icons: {
+    icon: "/z.ico",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
