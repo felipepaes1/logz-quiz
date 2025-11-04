@@ -21,6 +21,15 @@ type Question = {
   options: QuestionOption[];
 };
 
+type AnswerForSubmission = {
+  questionId: number;
+  questionType: Question["type"];
+  question: string;
+  answer: string;
+  optionValue: number;
+  monthlySpend?: number;
+};
+
 const OPTION_WEIGHTS = [0.4, 0.3, 0.2, 0.1] as const;
 const MAX_OPTION_WEIGHT = OPTION_WEIGHTS[0];
 const QUESTION_WEIGHTS = [3.0, 2.5, 2.0, 1.5, 1.0] as const;
@@ -405,7 +414,7 @@ const QuizLOGZ: React.FC = () => {
       QUESTION_WEIGHTS[QUESTION_WEIGHTS.length - 1] ??
       1;
     const normalizedValue =
-      MAX_OPTION_WEIGHT === 0 ? 0 : optionWeight / MAX_OPTION_WEIGHT;
+      Number(MAX_OPTION_WEIGHT) === 0 ? 0 : optionWeight / Number(MAX_OPTION_WEIGHT);
     const contribution = questionWeight * normalizedValue;
     const newAnswers: Record<number, number> = {
       ...answers,
@@ -2023,6 +2032,32 @@ const QuizLOGZ: React.FC = () => {
 
       let calendlyWindow: Window | null = openCalendlyWindow();
 
+      const answersForSubmission = questions.reduce<AnswerForSubmission[]>(
+        (accumulator, question, index) => {
+          const optionIndex = selectedOptionIndices[index];
+          if (typeof optionIndex !== "number") {
+            return accumulator;
+          }
+
+          const option = question.options[optionIndex];
+          if (!option) {
+            return accumulator;
+          }
+
+          accumulator.push({
+            questionId: question.id,
+            questionType: question.type,
+            question: question.question,
+            answer: option.text,
+            optionValue: option.value,
+            monthlySpend: option.monthlySpend,
+          });
+
+          return accumulator;
+        },
+        []
+      );
+
       try {
         const response = await fetch("/api/send-report", {
           method: "POST",
@@ -2038,6 +2073,7 @@ const QuizLOGZ: React.FC = () => {
             scorePercentage,
             efficiencyGain,
             economyPotential,
+            answers: answersForSubmission,
           }),
         });
 

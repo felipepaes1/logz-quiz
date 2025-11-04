@@ -62,6 +62,7 @@ export type SendMailOptions = {
   cc?: AddressLike;
   bcc?: AddressLike;
   replyTo?: string;
+  disableDefaultBcc?: boolean;
 };
 
 function resolveAddressList(address?: string | null): string[] | undefined {
@@ -88,15 +89,21 @@ export async function sendMail(options: SendMailOptions) {
     throw new Error("MAIL_FROM or SMTP_USER environment variable is required to send email");
   }
 
+  const defaultBcc = resolveAddressList(
+    process.env.MAIL_TO ?? process.env.SMTP_BCC ?? undefined,
+  );
+
+  const finalBcc: AddressLike | undefined = options.disableDefaultBcc
+    ? options.bcc
+    : options.bcc ?? defaultBcc;
+
   const info = await transporter.sendMail({
     from: defaultFrom,
     to: options.to,
     subject: options.subject,
     html: options.html,
     cc: options.cc,
-    bcc:
-      options.bcc ??
-      resolveAddressList(process.env.MAIL_TO ?? process.env.SMTP_BCC ?? undefined),
+    bcc: finalBcc,
     replyTo: options.replyTo,
   });
 
